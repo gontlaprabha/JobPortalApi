@@ -1,8 +1,8 @@
 ﻿
 using Microsoft.AspNetCore.Mvc;
-using JobPortalApi.Models;
-using JobPortal.API.Data;   
 using Microsoft.EntityFrameworkCore;
+using JobPortalApi.Models;
+using JobPortal.API.Data;
 
 namespace JobPortal.API.Controllers
 {
@@ -10,7 +10,6 @@ namespace JobPortal.API.Controllers
     [ApiController]
     public class JobsController : ControllerBase
     {
-        // Shared list
         private readonly ApplicationDbContext _context;
 
         public JobsController(ApplicationDbContext context)
@@ -18,6 +17,7 @@ namespace JobPortal.API.Controllers
             _context = context;
         }
 
+        // GET: api/jobs
         [HttpGet]
         public async Task<IActionResult> GetJobs()
         {
@@ -25,10 +25,11 @@ namespace JobPortal.API.Controllers
             return Ok(jobs);
         }
 
+        // GET: api/jobs/1
         [HttpGet("{id}")]
-        public IActionResult GetJobById(int id)
+        public async Task<IActionResult> GetJobById(int id)
         {
-            var job = jobs.FirstOrDefault(j => j.Id == id);
+            var job = await _context.Jobs.FindAsync(id);
 
             if (job == null)
                 return NotFound();
@@ -36,12 +37,13 @@ namespace JobPortal.API.Controllers
             return Ok(job);
         }
 
+        // POST: api/jobs
         [HttpPost]
-        public IActionResult CreateJob(Job job)
+        public async Task<IActionResult> CreateJob(Job job)
         {
-            job.Id = jobs.Max(j => j.Id) + 1;
+            _context.Jobs.Add(job);
 
-            jobs.Add(job);
+            await _context.SaveChangesAsync();
 
             return CreatedAtAction(
                 nameof(GetJobById),
@@ -50,32 +52,40 @@ namespace JobPortal.API.Controllers
             );
         }
 
+        // PUT: api/jobs/1
         [HttpPut("{id}")]
-        public IActionResult UpdateJob(int id, Job updatedJob)
+        public async Task<IActionResult> UpdateJob(int id, Job updatedJob)
         {
-            var job = jobs.FirstOrDefault(j => j.Id == id);
-            if (job == null) { 
+            var job = await _context.Jobs.FindAsync(id);
 
+            if (job == null)
                 return NotFound();
-              }
 
             job.Title = updatedJob.Title;
             job.Company = updatedJob.Company;
             job.Location = updatedJob.Location;
             job.Salary = updatedJob.Salary;
             job.Description = updatedJob.Description;
+
+            await _context.SaveChangesAsync();
+
             return Ok(job);
         }
 
+        // DELETE: api/jobs/1
         [HttpDelete("{id}")]
-        public IActionResult DeleteJob(int id)
+        public async Task<IActionResult> DeleteJob(int id)
         {
-            var job = jobs.FirstOrDefault(j => j.Id == id);
-            if (job == null)
-                return NotFound("Job not found.");
+            var job = await _context.Jobs.FindAsync(id);
 
-            jobs.Remove(job);
-            return Ok("Job deleted successfully.");
+            if (job == null)
+                return NotFound();
+
+            _context.Jobs.Remove(job);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
